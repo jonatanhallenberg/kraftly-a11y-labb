@@ -11,7 +11,7 @@
       </div>
       <div class="card stat">
         <div class="stat-label">Aktuellt pris</div>
-        <div class="stat-value">{{ currentPrice }} kr/kWh</div>
+        <div class="stat-value">{{ currentPrice }}</div>
       </div>
       <div class="card stat">
         <div class="stat-label">Avtal</div>
@@ -41,6 +41,7 @@
 // Dashboard. Got a bit big, clean up some day /M
 import _ from 'lodash'
 import { computed, onMounted, onBeforeUnmount } from 'vue'
+import { formatPrice } from '../utils/price'
 import { useUserStore } from '../stores/user'
 import { useConsumptionStore } from '../stores/consumption'
 import ConsumptionChart from '../components/ConsumptionChart.vue'
@@ -53,9 +54,7 @@ const latestMonth = computed(() => {
   return d ? d.values[d.values.length - 1] : '–'
 })
 
-const currentPrice = computed(() =>
-  consumptionStore.data ? consumptionStore.data.pricePerKwh : '–'
-)
+const currentPrice = computed(() => formatPrice(consumptionStore.data?.pricePerKwh))
 
 // debounce on resize, chart.js redraws itself but we log a bit /J
 const onResize = _.debounce(() => console.log('resize', window.innerWidth), 300)
