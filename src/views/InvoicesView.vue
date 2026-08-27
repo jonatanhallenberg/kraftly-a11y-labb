@@ -1,6 +1,7 @@
 <template>
   <div>
     <h1>Fakturor</h1>
+    <p v-if="error" role="alert" class="error">{{ error }}</p>
     <div class="card">
       <table>
         <tr>
@@ -25,9 +26,14 @@ import { fetchInvoices } from '../services/api'
 import StatusChip from '../components/StatusChip.vue'
 
 const invoices = ref([])
+const error = ref(null)
 
 onMounted(async () => {
-  invoices.value = await fetchInvoices()
+  try {
+    invoices.value = await fetchInvoices()
+  } catch {
+    error.value = 'Vi kunde inte hämta dina fakturor just nu. Försök igen om en stund.'
+  }
 })
 
 const downloadInvoice = (invoice) => {
@@ -38,5 +44,6 @@ const downloadInvoice = (invoice) => {
 </script>
 
 <style scoped>
+.error { color: #d92d20; margin-bottom: 12px; }
 .download { color: #2f54eb; cursor: pointer; font-size: 14px; }
 </style>
