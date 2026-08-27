@@ -1,0 +1,101 @@
+# Kraftly Mina sidor – CI-pipeline (M2)
+# Körs på varje pull request mot main och på varje push till main.
+# Tre jobb: quality och build kör parallellt, e2e väntar på build och testar
+# den byggda artefakten (samma filer som senare deployas).
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+# Minsta möjliga rättigheter för GITHUB_TOKEN – pipelinen behöver bara läsa repot.
+permissions:
+  contents: read
+
+# Ny push till samma PR avbryter den pågående körningen – sparar minuter i kön.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Vi kör Playwright i CI – ladda inte ner Cypress-binären (~250 MB) i onödan.
+  # Cypress-team: ta bort raden och byt e2e-jobbet enligt kommentaren längst ner.
+  CYPRESS_INSTALL_BINARY: 0
+
+jobs:
+  quality:
+    name: Lint & enhetstester
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm            # cachar ~/.npm nycklat på package-lock.json
+      - run: npm ci
+      # I teamets repo finns lint och format:check sedan M1 – de hör hemma här:
+      # - run: npm run lint
+      # - run: npm run format:check
+      - run: npm run test:run
+
+  build:
+    name: Bygg
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist
+          retention-days: 7
+
+  e2e:
+    name: E2E-smoke (Playwright)
+    runs-on: ubuntu-latest
+    needs: build              # testar den byggda artefakten – inte källkoden en gång till
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist
+      - run: npx playwright install --with-deps chromium
+      - run: npm run e2e:pw
+        env:
+          E2E_SERVER: preview   # playwright.config.js: vite preview på dist/ istället för dev-servern
+      - uses: actions/upload-artifact@v4
+        if: failure()          # rapporten med skärmdumpar är bara intressant när det gick fel
+        with:
+          name: playwright-report
+          path: playwright-report
+
+  # ---- Cypress-variant av e2e-jobbet (för team som valde Cypress) ----
+  # e2e:
+  #   name: E2E-smoke (Cypress)
+  #   runs-on: ubuntu-latest
+  #   needs: build
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - uses: actions/setup-node@v4
+  #       with:
+  #         node-version: 22
+  #         cache: npm
+  #     - run: npm ci                 # laddar ner Cypress-binären – ta bort CYPRESS_INSTALL_BINARY ovan
+  #     - run: npm run e2e:cy         # start-server-and-test startar api + dev, kör cypress run
+  #     - uses: actions/upload-artifact@v4
+  #       if: failure()
+  #       with:
+  #         name: cypress-screenshots
+  #         path: cypress/screenshots
