@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { invoiceStatus, unpaidTotal } from './invoice'
 
-const today = new Date('2026-08-27')
+const today = new Date('2026-08-27T15:30:00') // mitt på dagen – inte midnatt
 
 describe('invoiceStatus', () => {
   it('betald faktura är betald oavsett datum', () => {
@@ -23,7 +23,7 @@ describe('unpaidTotal', () => {
     const invoices = [
       { amount: 412, status: 'Obetald' },
       { amount: 486, status: 'Betald' },
-      { amount: 100, status: 'Obetald' }
+      { amount: 100, status: 'Obetald' },
     ]
     expect(unpaidTotal(invoices)).toBe(512)
   })
