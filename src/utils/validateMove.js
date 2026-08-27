@@ -1,3 +1,5 @@
+import { parseLocalDate, startOfDay, addDays } from './date'
+
 const ZIP = /^\d{5}$/
 const DATE = /^\d{4}-\d{2}-\d{2}$/
 const MIN_DAYS_AHEAD = 14
@@ -13,12 +15,11 @@ export const validateMove = (form, today = new Date()) => {
   if (!form.city?.trim()) errors.city = 'Ange en ort'
   if (!form.contract) errors.contract = 'Välj ett avtal'
 
-  if (!DATE.test(form.date ?? '') || Number.isNaN(new Date(form.date).getTime())) {
+  if (!DATE.test(form.date ?? '') || Number.isNaN(parseLocalDate(form.date).getTime())) {
     errors.date = 'Datum ska anges som ÅÅÅÅ-MM-DD'
   } else {
-    const earliest = new Date(today)
-    earliest.setDate(earliest.getDate() + MIN_DAYS_AHEAD)
-    if (new Date(form.date) < earliest) {
+    const earliest = addDays(startOfDay(today), MIN_DAYS_AHEAD)
+    if (parseLocalDate(form.date) < earliest) {
       errors.date = `Anmälan måste göras senast ${MIN_DAYS_AHEAD} dagar före flytt`
     }
   }

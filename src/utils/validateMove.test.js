@@ -1,13 +1,13 @@
 import { describe, it, expect } from 'vitest'
 import { validateMove, isValidMove } from './validateMove'
 
-const today = new Date('2026-08-27')
+const today = new Date('2026-08-27T15:30:00') // mitt på dagen – inte midnatt
 const valid = {
   address: 'Solvägen 12',
   zip: '80267',
   city: 'Gävle',
   date: '2026-10-01',
-  contract: 'Rörligt pris'
+  contract: 'Rörligt pris',
 }
 
 describe('validateMove', () => {
