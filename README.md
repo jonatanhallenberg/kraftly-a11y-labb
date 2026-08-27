@@ -5,7 +5,10 @@ Customer portal for Kraftly. Delivered by Webbmakarna AB 2026-06-30.
 ## Getting started
 
     npm install
-    npm start
+    npm run api      # mock-API på :4000
+    npm run dev      # appen på :5173
 
-TODO: write proper documentation
-# kraftly-mina-sidor
+## Tester
+
+    npm test         # watch-läge
+    npm run test:run # kör en gång och avslutar – det CI vill ha
