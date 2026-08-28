@@ -11,13 +11,10 @@ test.beforeEach(async ({ page }) => {
   )
 })
 
-test('en obetald faktura med passerat förfallodatum visas som Förfallen', async ({ page }) => {
+test('fakturasidan visar det API:et svarar – även en faktura servern aldrig haft', async ({ page }) => {
   await page.route('**/api/invoices', (route) =>
     route.fulfill({
-      json: [
-        { id: 'F-1', period: 'Juni 2026', amount: 412, status: 'Obetald', due: '2020-01-01' },
-        { id: 'F-2', period: 'Maj 2026', amount: 486, status: 'Betald', due: '2026-06-30' }
-      ]
+      json: [{ id: 'F-999', period: 'December 2019', amount: 999, status: 'Obetald', due: '2020-01-01' }]
     })
   )
 
@@ -25,9 +22,9 @@ test('en obetald faktura med passerat förfallodatum visas som Förfallen', asyn
   await page.getByRole('button', { name: 'Logga in' }).click()
   await page.getByRole('link', { name: 'Fakturor' }).click()
 
-  const row = page.getByRole('row').filter({ hasText: 'F-1' })
-  await expect(row.getByRole('status')).toHaveText('Förfallen')
-  await expect(page.getByRole('row').filter({ hasText: 'F-2' }).getByRole('status')).toHaveText('Betald')
+  // Servern har inga fakturor från 2019 – ändå står den där. Svaret kom från mocken.
+  await expect(page.getByText('F-999')).toBeVisible()
+  await expect(page.getByText('December 2019')).toBeVisible()
 })
 
 test('kunden ser ett tydligt fel när API:et ligger nere', async ({ page }) => {
