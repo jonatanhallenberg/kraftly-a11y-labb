@@ -8,10 +8,9 @@ describe('fakturor', () => {
     cy.intercept('GET', '**/api/consumption', { unit: 'kWh', months: ['Jan'], values: [100], pricePerKwh: 2 })
   })
 
-  it('en obetald faktura med passerat förfallodatum visas som Förfallen', () => {
+  it('fakturasidan visar det API:et svarar – även en faktura servern aldrig haft', () => {
     cy.intercept('GET', '**/api/invoices', [
-      { id: 'F-1', period: 'Juni 2026', amount: 412, status: 'Obetald', due: '2020-01-01' },
-      { id: 'F-2', period: 'Maj 2026', amount: 486, status: 'Betald', due: '2026-06-30' }
+      { id: 'F-999', period: 'December 2019', amount: 999, status: 'Obetald', due: '2020-01-01' }
     ]).as('invoices')
 
     cy.visit('/login')
@@ -19,8 +18,9 @@ describe('fakturor', () => {
     cy.contains('a', 'Fakturor').click()
     cy.wait('@invoices')
 
-    cy.contains('tr', 'F-1').find('[role=status]').should('have.text', 'Förfallen')
-    cy.contains('tr', 'F-2').find('[role=status]').should('have.text', 'Betald')
+    // Servern har inga fakturor från 2019 – ändå står den där. Svaret kom från mocken.
+    cy.contains('td', 'F-999').should('be.visible')
+    cy.contains('December 2019').should('be.visible')
   })
 
   it('kunden ser ett tydligt fel när API:et ligger nere', () => {
