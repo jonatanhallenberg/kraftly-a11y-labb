@@ -1,0 +1,14 @@
+services:
+  web:
+    build: .
+    ports:
+      - "8080:80"
+    depends_on:
+      - api
+
+  api:
+    build:
+      context: .
+      dockerfile: mock-api/Dockerfile
+    ports:
+      - "4000:4000"   # browsern anropar localhost:4000 – därför måste porten publiceras

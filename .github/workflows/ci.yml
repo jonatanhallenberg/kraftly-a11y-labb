@@ -81,6 +81,17 @@ jobs:
           name: playwright-report
           path: playwright-report
 
+  image:
+    name: Docker-image
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # Bevisar att Dockerfilen bygger i en neutral miljö (M3). Runnern har Docker.
+      # Bygger appen en gång till inne i containern – medvetet: imagen ska vara
+      # självständig och inte bero på artefakten från build-jobbet.
+      - run: docker build -t kraftly .
+      - run: docker image ls kraftly --format "{{.Repository}} {{.Size}}"
+
   # ---- Cypress-variant av e2e-jobbet (för team som valde Cypress) ----
   # e2e:
   #   name: E2E-smoke (Cypress)
