@@ -18,7 +18,7 @@ Vi valde `nginx:1.27-alpine` i stället för `busybox`/`nginx:alpine-slim`. Täv
 Egen image via Compose (`mock-api/Dockerfile`). Alternativet bind mount av källkoden ger hot reload, men API:t ändras sällan och vi vill att `docker compose up` ska fungera i ett rent klon utan `npm install`. `npm ci --omit=dev` tar ändå med vue/pinia/lodash eftersom de ligger under `dependencies` – flyttas till ett eget `package.json` i `mock-api/` om det blir ett problem.
 
 ## Beslut 3 · Hur browsern når API:t
-Publicerad port (`4000:4000`) och `localhost:4000` kvar i `src/services/api.js` – enklast nu. **Konsekvens för vecka 5:** i staging finns inget localhost; vi byter till relativt `/api` + nginx-proxy (se branch `docker-facit-proxy`) i samband med M4:s miljökonfig.
+Proxy: appen anropar `/api` relativt, Vite proxar i dev/preview och nginx proxar till `http://api:4000` i containern. API-porten är inte publicerad. **Konsekvens för vecka 5:** frontenden har ingen aning om var API:t bor – det avgörs av servern (nginx-konfig/miljö), vilket är precis vad staging behöver.
 
 ## Vad som körs i CI
 `docker build` i jobbet `image` – bevisar att Dockerfilen bygger i en neutral miljö. Storleken skrivs ut i loggen. Imagen pushas inte ännu (M4).

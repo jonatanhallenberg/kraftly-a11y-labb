@@ -10,5 +10,4 @@ services:
     build:
       context: .
       dockerfile: mock-api/Dockerfile
-    ports:
-      - "4000:4000"   # browsern anropar localhost:4000 – därför måste porten publiceras
+    # Ingen publicerad port: bara web når api, via nätverket. Browsern pratar med web.

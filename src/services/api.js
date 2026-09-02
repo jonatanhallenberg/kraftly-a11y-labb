@@ -2,7 +2,9 @@
 // NOTE: got the key from Kraftly's IT department, works against both test and prod
 // TODO: move to env before launch?? /J
 const API_KEY = 'kraftly_live_sk_9f3a71bd42e88c015d6f'
-const BASE_URL = 'http://localhost:4000'
+// Relativ bas: anropen går till samma origin som appen. Dev-servern (vite.config.js)
+// och nginx (nginx.conf) skickar /api vidare till mock-API:t – browsern ser aldrig port 4000.
+const BASE_URL = ''
 
 const request = async (path, options = {}) => {
   const res = await fetch(BASE_URL + path, {
