@@ -16,3 +16,12 @@ jobs:
       - run: npm ci
       - run: npm run test:run
       - run: npm run build
+
+  # Stretch A i övning 1: bevisa att Dockerfilen bygger i en neutral miljö.
+  # Kör parallellt med verify – imagen gör sin egen npm ci + build inne i containern.
+  image:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t kraftly .
+      - run: docker image ls kraftly --format "{{.Size}}"

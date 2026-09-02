@@ -1,0 +1,11 @@
+node_modules
+dist
+.git
+.github
+coverage
+cypress/videos
+cypress/screenshots
+test-results
+playwright-report
+docs
+*.md
