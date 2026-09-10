@@ -1,13 +1,13 @@
-# Kraftly Mina sidor – CI-pipeline (M2)
-# Körs på varje pull request mot main och på varje push till main.
-# Tre jobb: quality och build kör parallellt, e2e väntar på build och testar
-# den byggda artefakten (samma filer som senare deployas).
+# Kraftly Mina sidor – CI/CD-pipeline (M2 → M4)
+# PR mot main: quality + build + e2e + imagen byggs (men publiceras inte).
+# Push till main: allt ovan → imagen pushas till GHCR taggad med sha → deploy till staging.
 name: CI
 
 on:
   pull_request:
   push:
     branches: [main]
+  workflow_dispatch:
 
 # Minsta möjliga rättigheter för GITHUB_TOKEN – pipelinen behöver bara läsa repot.
 permissions:
@@ -75,22 +75,91 @@ jobs:
       - run: npm run e2e:pw
         env:
           E2E_SERVER: preview   # playwright.config.js: vite preview på dist/ istället för dev-servern
+          # Nyckel till mock-API:t som startas här på runnern. Ingen hemlighet – den öppnar
+          # bara ett API som lever i två minuter på en maskin som sedan slängs.
+          API_KEY: e2e-testnyckel
       - uses: actions/upload-artifact@v4
         if: failure()          # rapporten med skärmdumpar är bara intressant när det gick fel
         with:
           name: playwright-report
           path: playwright-report
 
-  image:
-    name: Docker-image
+  publish:
+    name: Image → GHCR
     runs-on: ubuntu-latest
+    needs: [quality, e2e] # bara kod som klarat testerna blir en image
+    permissions:
+      contents: read
+      packages: write # får pusha till GitHub Container Registry
     steps:
       - uses: actions/checkout@v4
-      # Bevisar att Dockerfilen bygger i en neutral miljö (M3). Runnern har Docker.
-      # Bygger appen en gång till inne i containern – medvetet: imagen ska vara
-      # självständig och inte bero på artefakten från build-jobbet.
-      - run: docker build -t kraftly .
-      - run: docker image ls kraftly --format "{{.Repository}} {{.Size}}"
+      # GHCR kräver små bokstäver – repot kan heta Team-Volt/Kraftly. ${VAR,,} = gemener i bash.
+      - name: Imagenamn
+        run: echo "IMAGE=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_ENV"
+      # Bygg EN gång, tagga med sha. Det är den här imagen – inte källkoden – som deployas.
+      - name: Bygg imagen
+        run: docker build --build-arg GIT_SHA=${{ github.sha }} -t "$IMAGE:${{ github.sha }}" -t "$IMAGE:main" .
+      - run: docker image ls "$IMAGE" --format "{{.Repository}}:{{.Tag}}  {{.Size}}"
+      - name: Logga in på GHCR
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Pusha
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        run: |
+          docker push "$IMAGE:${{ github.sha }}"
+          docker push "$IMAGE:main"
+
+  deploy-staging:
+    name: Deploy → staging
+    runs-on: ubuntu-latest
+    needs: publish
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    # Secret RENDER_DEPLOY_HOOK + variabel STAGING_URL ligger i GitHub-miljön "staging"
+    environment:
+      name: staging
+      url: ${{ vars.STAGING_URL }}
+    concurrency:
+      group: deploy-staging
+      cancel-in-progress: false # avbryt aldrig en deploy halvvägs
+    steps:
+      - name: Be Render köra exakt den här imagen
+        env:
+          HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
+        run: |
+          : "${HOOK:?RENDER_DEPLOY_HOOK saknas i miljön staging}"
+          IMAGE="ghcr.io/${GITHUB_REPOSITORY,,}:${GITHUB_SHA}"
+          ENCODED=$(jq -rn --arg u "$IMAGE" '$u|@uri') # ghcr.io/a/b:sha → ghcr.io%2Fa%2Fb%3Asha
+          curl -fsS -X POST "${HOOK}&imgURL=${ENCODED}"
+          echo
+          echo "Render har tagit emot $IMAGE"
+      - name: Vänta tills staging kör den här committen
+        env:
+          URL: ${{ vars.STAGING_URL }}
+        run: |
+          URL="${URL%/}"
+          for i in $(seq 1 30); do
+            LIVE=$(curl -fsS "$URL/version.txt" 2>/dev/null || true)
+            if [ "$LIVE" = "$GITHUB_SHA" ]; then
+              echo "✅ $URL kör $GITHUB_SHA"
+              exit 0
+            fi
+            echo "Försök $i/30: staging kör ${LIVE:-(inget svar ännu)} – väntar 10 s"
+            sleep 10
+          done
+          echo "::error::Staging kör fortfarande inte $GITHUB_SHA efter 5 minuter. Kolla Events/Logs i Render."
+          exit 1
+      - name: Röktest mot staging – går inloggningen genom proxyn?
+        env:
+          URL: ${{ vars.STAGING_URL }}
+        run: |
+          URL="${URL%/}"
+          curl -fsS -X POST "$URL/api/login" -H 'Content-Type: application/json' -d '{"email":"a@b.se","password":"x"}'
+          echo
+          echo "✅ /api svarar via nginx med nyckeln från Render"
 
   # ---- Cypress-variant av e2e-jobbet (för team som valde Cypress) ----
   # e2e:

@@ -1,0 +1,24 @@
+# MALL – nginx-imagen fyller i ${PORT}, ${API_URL} och ${API_KEY} från miljön när
+# containern startar och skriver resultatet till /etc/nginx/conf.d/default.conf.
+# Saknas en variabel vägrar nginx starta: [emerg] unknown "api_key" variable.
+server {
+  listen ${PORT};
+  root /usr/share/nginx/html;
+  index index.html;
+
+  # Single page-app: okända adresser (/fakturor, /profil …) ska ge index.html
+  # så att Vue Router kan ta över. Utan den här raden: 404 vid omladdning.
+  location / {
+    try_files $uri $uri/ /index.html;
+  }
+
+  # Appen anropar /api relativt. Här skickas anropet vidare – lokalt till api-containern
+  # (API_URL=http://api:4000), i staging till Kraftlys test-API – och nyckeln läggs på
+  # på servern. Browsern ser aldrig nyckeln.
+  location /api/ {
+    proxy_pass ${API_URL}/api/;
+    proxy_set_header X-Api-Key ${API_KEY};
+    proxy_ssl_server_name on;   # krävs när API_URL är https (SNI)
+    proxy_read_timeout 90s;     # test-API:t på gratisnivå kan sova – första anropet tar upp mot en minut
+  }
+}

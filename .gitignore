@@ -6,3 +6,7 @@ test-results/
 playwright-report/
 cypress/videos/
 cypress/screenshots/
+
+# Hemligheter och lokal konfiguration – aldrig i repot
+.env
+.env.local

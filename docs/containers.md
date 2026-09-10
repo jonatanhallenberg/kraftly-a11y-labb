@@ -3,7 +3,7 @@
 *Exempelifyllt facit (M3). Siffrorna nedan är illustrativa – teamen mäter sina egna.*
 
 ## Så kör man
-`docker compose up --build` → http://localhost:8080 (frontend) · http://localhost:4000 (mock-API)
+`cp .env.example .env` och `docker compose up --build` → http://localhost:8080 (API:t nås via `/api`)
 
 ## Imagen
 | Version | Basimage | Storlek | Byggtid (utan cache) | Byggtid (kodändring) |
@@ -25,5 +25,5 @@ Proxy: appen anropar `/api` relativt, Vite proxar i dev/preview och nginx proxar
 
 ## Kända begränsningar
 - `hero.png` är fortfarande 6,5 MB – tas i M7 (prestanda)
-- API-nyckeln ligger kvar i `api.js` – tas i M4 (secrets)
+- ~~API-nyckeln ligger kvar i `api.js`~~ – borttagen och roterad i M4, se `docs/deploy.md`
 - Imagen byggs för värdens arkitektur (arm64 på Apple Silicon) – `--platform linux/amd64` kan behövas vid deploy i M4
