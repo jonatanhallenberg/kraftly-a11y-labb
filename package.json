@@ -10,7 +10,7 @@
     "test": "vitest",
     "test:run": "vitest run",
     "e2e:pw": "playwright test",
-    "e2e:cy": "start-server-and-test \"npm run api\" http://localhost:4000/api/user \"npm run dev\" http://localhost:5173 \"cypress run\""
+    "e2e:cy": "start-server-and-test \"npm run api\" http://localhost:4000/healthz \"npm run dev\" http://localhost:5173 \"cypress run\""
   },
   "dependencies": {
     "chart.js": "^4.4.7",

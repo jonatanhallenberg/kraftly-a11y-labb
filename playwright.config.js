@@ -12,7 +12,7 @@ export default defineConfig({
   use: { baseURL: 'http://localhost:5173' },
   projects: [{ name: 'chromium', use: { browserName: 'chromium' } }],
   webServer: [
-    { command: 'npm run api', url: 'http://localhost:4000/api/user', reuseExistingServer: true },
+    { command: 'npm run api', url: 'http://localhost:4000/healthz', reuseExistingServer: true },
     appServer
   ]
 })

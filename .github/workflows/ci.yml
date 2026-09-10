@@ -14,9 +14,10 @@ permissions:
   contents: read
 
 # Ny push till samma PR avbryter den pågående körningen – sparar minuter i kön.
+# Men bara på PR:er: en körning på main kan vara mitt i en deploy och får aldrig avbrytas.
 concurrency:
   group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
   # Vi kör Playwright i CI – ladda inte ner Cypress-binären (~250 MB) i onödan.
@@ -140,6 +141,7 @@ jobs:
         env:
           URL: ${{ vars.STAGING_URL }}
         run: |
+          : "${URL:?STAGING_URL saknas i miljön staging}"
           URL="${URL%/}"
           for i in $(seq 1 30); do
             LIVE=$(curl -fsS "$URL/version.txt" 2>/dev/null || true)
