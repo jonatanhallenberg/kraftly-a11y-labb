@@ -55,10 +55,10 @@ $ curl -s -o /dev/null -w "%{http_code}\n" -H "X-Api-Key: kraftly_live_sk_9f3a71
 
 Det som körs är en image, och varje image i GHCR är taggad med sin sha. Rollback = be Render köra en äldre tagg. Två sätt:
 
-1. **Render:** tjänsten → *Events* → välj en tidigare lyckad deploy → *Rollback*.
-2. **Hooken, samma som pipelinen:** `curl -X POST "$RENDER_DEPLOY_HOOK&imgURL=ghcr.io%2Fteam-volt%2Fkraftly%3A<gammal-sha>"`
+1. **Hooken, samma som pipelinen (förstahandsvalet):** `curl -X POST "$RENDER_DEPLOY_HOOK&imgURL=ghcr.io%2Fteam-volt%2Fkraftly%3A<gammal-sha>"`
+2. **Render:** tjänsten → *Events* → välj en tidigare lyckad deploy → *Rollback*. Fungerar exakt för deployer som pipelinen startat (de har en sha-tagg). **Inte** för den allra första deployen, som skapades med `:main` – Render hämtar då den *senaste* imagen med den taggen, alltså den nya versionen.
 
-Kontrollera efteråt med `/version.txt`. Nästa merge till `main` deployar som vanligt igen. En rollback är ett tillfälligt läge, inte en lösning – buggen ska fixas i koden.
+Kontrollera efteråt med `/version.txt`. Obs: ändrar man en miljövariabel i Render efter en rollback deployas tjänstens grundimage (`:main`) igen – då är rollbacken borta. Nästa merge till `main` deployar som vanligt igen. En rollback är ett tillfälligt läge, inte en lösning – buggen ska fixas i koden.
 
 ## Tider (uppmätta, exempel)
 
