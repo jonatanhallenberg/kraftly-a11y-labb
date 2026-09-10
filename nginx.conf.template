@@ -1,0 +1,23 @@
+# Det här är en MALL. När containern startar byter nginx-imagen ut ${PORT}, ${API_URL}
+# och ${API_KEY} mot miljövariablerna och skriver resultatet till
+# /etc/nginx/conf.d/default.conf. Imagen innehåller alltså ingen adress och ingen nyckel –
+# de kommer från miljön där containern körs (Render, docker run -e, compose).
+server {
+  listen ${PORT};
+  root /usr/share/nginx/html;
+  index index.html;
+
+  # Single page-app: okända adresser (/fakturor, /profil …) ska ge index.html
+  location / {
+    try_files $uri $uri/ /index.html;
+  }
+
+  # /api skickas vidare till API:t – och nyckeln läggs på HÄR, på servern.
+  # Browsern ser aldrig nyckeln, och den finns inte i JavaScript-filerna.
+  location /api/ {
+    proxy_pass ${API_URL}/api/;
+    proxy_set_header X-Api-Key ${API_KEY};
+    proxy_ssl_server_name on;   # krävs när API_URL är https (SNI)
+    proxy_read_timeout 90s;     # gratis-API:t kan sova – första anropet tar upp mot en minut
+  }
+}

@@ -1,14 +1,26 @@
-# kraftly-portal
+# kraftly-cd-labb
 
-Customer portal for Kraftly. Delivered by Webbmakarna AB 2026-06-30.
+Övningsrepo för labben *Första deployen* (vecka 5). Instruktionerna finns i Canvas.
 
-## Getting started
+Kraftlys portal, containeriserad sedan förra veckan – nu förberedd för molnet:
 
+- Appen anropar `/api` relativt. Ingen API-nyckel i frontendkoden.
+- `nginx.conf.template` fyller i `PORT`, `API_URL` och `API_KEY` från miljön när containern startar.
+- Pipelinen (`.github/workflows/ci.yml`) testar, bygger imagen en gång, pushar den till GHCR och deployar till staging.
+
+## Kör lokalt
+
+    cp .env.example .env
     npm install
-    npm run api      # mock-API på :4000
-    npm run dev      # appen på :5173
+    npm run api      # mock-API:t på :4000 – läser API_KEY från .env
+    npm run dev      # appen på :5173 – Vite-proxyn skickar /api vidare med nyckeln
 
-## Tester
+## Kör imagen lokalt
 
-    npm test         # watch-läge
-    npm run test:run # kör en gång och avslutar – det CI vill ha
+    docker build -t kraftly .
+    docker run --rm -p 8080:80 \
+      -e API_URL=http://host.docker.internal:4000 \
+      -e API_KEY=lokal-utvecklingsnyckel \
+      kraftly
+
+`http://localhost:8080` – och `http://localhost:8080/version.txt` visar vilken commit imagen byggdes från (lokalt: `lokal`).

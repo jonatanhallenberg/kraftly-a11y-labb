@@ -1,15 +1,16 @@
 // API client for Kraftly "Mina sidor"
-// NOTE: got the key from Kraftly's IT department, works against both test and prod
-// TODO: move to env before launch?? /J
-const API_KEY = 'kraftly_live_sk_9f3a71bd42e88c015d6f'
-const BASE_URL = 'http://localhost:4000'
+//
+// Ingen nyckel här. Allt som ligger i frontendkoden hamnar i JavaScript-filen som
+// browsern laddar ner – en nyckel i den här filen är publik för alla som trycker F12.
+// Appen anropar /api relativt. Servern framför appen (Vite lokalt, nginx i molnet)
+// skickar anropet vidare till API:t och lägger på nyckeln på vägen.
+const BASE_URL = ''
 
 const request = async (path, options = {}) => {
   const res = await fetch(BASE_URL + path, {
     ...options,
     headers: {
       'Content-Type': 'application/json',
-      'X-Api-Key': API_KEY,
       ...options.headers
     }
   })

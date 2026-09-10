@@ -1,27 +1,114 @@
-name: CI
+name: CI/CD
 
+# PR mot main: testa och bygg imagen (men publicera ingenting).
+# Push till main: testa → bygg imagen EN gång → pusha till GHCR → deploya till staging.
+# workflow_dispatch = knappen "Run workflow" under Actions, om du vill köra om för hand.
 on:
   pull_request:
   push:
     branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
   verify:
+    name: Test & bygg
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+          cache: npm
       - run: npm ci
       - run: npm run test:run
       - run: npm run build
 
-  # Stretch A i övning 1: bevisa att Dockerfilen bygger i en neutral miljö.
-  # Kör parallellt med verify – imagen gör sin egen npm ci + build inne i containern.
-  image:
+  publish:
+    name: Image → GHCR
     runs-on: ubuntu-latest
+    needs: verify # bara testad kod blir en image
+    permissions:
+      contents: read
+      packages: write # får pusha till GitHub Container Registry
     steps:
       - uses: actions/checkout@v4
-      - run: docker build -t kraftly .
-      - run: docker image ls kraftly --format "{{.Size}}"
+
+      # GHCR kräver små bokstäver, och repot kan heta Kraftly-Nisse. ${VAR,,} = gemener i bash.
+      - name: Imagenamn
+        run: echo "IMAGE=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_ENV"
+
+      # Bygg en gång, tagga med commitens sha. Samma image går sedan till staging (och i vecka 6 till prod).
+      - name: Bygg imagen
+        run: docker build --build-arg GIT_SHA=${{ github.sha }} -t "$IMAGE:${{ github.sha }}" -t "$IMAGE:main" .
+
+      - run: docker image ls "$IMAGE" --format "{{.Repository}}:{{.Tag}}  {{.Size}}"
+
+      - name: Logga in på GHCR
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }} # ingen egen hemlighet behövs – GitHub skapar en per körning
+
+      - name: Pusha
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        run: |
+          docker push "$IMAGE:${{ github.sha }}"
+          docker push "$IMAGE:main"
+
+  deploy:
+    name: Deploy → staging
+    runs-on: ubuntu-latest
+    needs: publish
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    # Hemligheten och variabeln nedan ligger i GitHub-miljön "staging"
+    # (Settings → Environments → staging). Körningen syns under Deployments på repots startsida.
+    environment:
+      name: staging
+      url: ${{ vars.STAGING_URL }}
+    concurrency:
+      group: deploy-staging
+      cancel-in-progress: false # avbryt aldrig en deploy halvvägs
+    steps:
+      - name: Be Render köra exakt den här imagen
+        id: hook
+        env:
+          HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
+        run: |
+          if [ -z "$HOOK" ]; then
+            echo "::warning::RENDER_DEPLOY_HOOK saknas i miljön staging – hoppar över deploy (övning 1, steg 4)"
+            exit 0
+          fi
+          IMAGE="ghcr.io/${GITHUB_REPOSITORY,,}:${GITHUB_SHA}"
+          # imgURL måste URL-kodas: ghcr.io/a/b:sha → ghcr.io%2Fa%2Fb%3Asha
+          ENCODED=$(jq -rn --arg u "$IMAGE" '$u|@uri')
+          curl -fsS -X POST "${HOOK}&imgURL=${ENCODED}"
+          echo
+          echo "Render har tagit emot $IMAGE"
+          echo "deployed=true" >> "$GITHUB_OUTPUT"
+
+      - name: Vänta tills staging kör den här committen
+        if: steps.hook.outputs.deployed == 'true'
+        env:
+          URL: ${{ vars.STAGING_URL }}
+        run: |
+          if [ -z "$URL" ]; then
+            echo "::warning::Variabeln STAGING_URL saknas i miljön staging – kan inte verifiera"
+            exit 0
+          fi
+          URL="${URL%/}" # utan avslutande snedstreck
+          for i in $(seq 1 30); do
+            LIVE=$(curl -fsS "$URL/version.txt" 2>/dev/null || true)
+            if [ "$LIVE" = "$GITHUB_SHA" ]; then
+              echo "✅ $URL kör $GITHUB_SHA"
+              exit 0
+            fi
+            echo "Försök $i/30: staging kör ${LIVE:-(inget svar ännu)} – väntar 10 s"
+            sleep 10
+          done
+          echo "::error::Staging kör fortfarande inte $GITHUB_SHA efter 5 minuter. Kolla Events/Logs i Render."
+          exit 1
