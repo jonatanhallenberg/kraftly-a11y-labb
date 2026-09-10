@@ -2,7 +2,7 @@
   <div class="login-wrap">
     <div class="card login-card">
       <img src="../assets/logo-dark.svg" class="login-logo">
-      <h1>Logga in på Mina sidor</h1>
+      <h1>Logga in på Kraftly Mina sidor</h1>
       <input type="text" placeholder="E-postadress" v-model="email">
       <input type="password" placeholder="Lösenord" v-model="password">
       <button class="btn" style="width:100%" @click="handleLogin">Logga in</button>
