@@ -1,7 +1,9 @@
 # Kraftly Mina sidor i Kubernetes – stretchövningen i vecka 6.
-# Tre objekt i en fil: ConfigMap (publik konfiguration), Secret (nyckeln) och
-# Deployment (tre kopior av samma image) + Service (en adress framför dem).
+# Tre objekt i en fil: ConfigMap (publik konfiguration), Deployment (tre kopior av
+# samma image) och Service (en adress framför dem). Nyckeln ligger INTE här – den
+# skapas som ett Secret med kubectl, så att den aldrig hamnar i repot:
 #
+#   kubectl create secret generic kraftly-secrets --from-literal=API_KEY=<nyckeln>
 #   kubectl apply -f k8s/kraftly.yaml
 #   kubectl get pods -w
 #   kubectl port-forward service/kraftly 8080:80   →  http://localhost:8080
@@ -16,14 +18,6 @@ data:
   APP_ENV: "kubernetes"
   FEATURE_NORWAY: "true"
   API_URL: "https://kraftly-api-staging.onrender.com" # test-API:t, utan snedstreck sist
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: kraftly-secrets
-type: Opaque
-stringData:
-  API_KEY: "byt-mig" # kubectl create secret generic … är det riktiga sättet; här för att labben ska gå att köra
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -53,7 +47,7 @@ spec:
             - configMapRef:
                 name: kraftly-config
             - secretRef:
-                name: kraftly-secrets
+                name: kraftly-secrets # skapat med kubectl, finns inte i repot
           # Samma fråga som pipelinen ställer: svarar den? Först då får den trafik.
           readinessProbe:
             httpGet:
