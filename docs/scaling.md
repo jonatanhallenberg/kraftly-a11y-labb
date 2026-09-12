@@ -14,11 +14,11 @@ Vi körde portalens image lokalt (nginx i containern, samma image som i staging)
 |---|---|---|---|
 | `GET /` (index.html, 0,6 kB) | ~45 000 | 12 ms | 451 000 anrop på 10 s |
 | `GET /assets/index-*.js` (393 kB) | ~1 800 | 63 ms | 7 GB på 10 s – nätverkskortet är gränsen, inte nginx |
-| `GET /api/user` via nginx → mock-API | ~1 100 | 61 ms | Node-processen är gränsen |
+| `GET /api/user` via nginx → mock-API | ~6 900 | **5 800 ms** | Node-processen köar: genomströmningen ser bra ut, men var femtionde användare väntar sex sekunder |
 
 Mot staging på Render (gratisnivå, en instans, 10 anslutningar i 10 sekunder): `GET /` ~180 req/s, p99 120 ms, där nästan allt är nätverksväg och Renders proxy.
 
-**Slutsats 1:** de statiska filerna är aldrig flaskhalsen. En enda nginx-container serverar tiotusentals sidladdningar per sekund – det räcker till hela Kraftlys kundstock på en gång. Det som kostar är **API-anropen** (femtio gånger färre per sekund) och **bytes över nätet** (JS-bundlen är 142 kB gzip, hero-bilden 6,5 MB – den åtgärdas i M7).
+**Slutsats 1:** de statiska filerna är aldrig flaskhalsen. En enda nginx-container serverar tiotusentals sidladdningar per sekund – det räcker till hela Kraftlys kundstock på en gång. Det som kostar är **API-anropen** – inte i antal per sekund utan i latens: under last köar API-processen och p99 går från millisekunder till sekunder, medan nginx ligger kvar på 12 ms och **bytes över nätet** (JS-bundlen är 142 kB gzip, hero-bilden 6,5 MB – den åtgärdas i M7).
 
 **Slutsats 2:** fler kopior av frontenden ger nästan ingenting. Cache ger allt.
 
