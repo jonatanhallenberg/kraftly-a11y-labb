@@ -8,17 +8,17 @@ Kraftly har ungefär 40 000 kunder med inloggning, och portalen är ny. Det är 
 
 ## Vad vi mätte
 
-Vi körde portalens image lokalt och belastade den med `autocannon` (50 samtidiga anslutningar i 10 sekunder), på en vanlig laptop:
+Vi körde portalens image lokalt (nginx i containern, samma image som i staging) och belastade den med `autocannon` (50 samtidiga anslutningar i 10 sekunder), på en laptop med fyra kärnor:
 
-| Anrop | Req/s | p99-latens | Storlek |
+| Anrop | Req/s (medel) | p99-latens | Storlek |
 |---|---|---|---|
-| `GET /` (index.html) | ~14 000 | 6 ms | 0,6 kB |
-| `GET /assets/index-*.js` | ~9 000 | 9 ms | 393 kB (142 kB gzip) |
-| `GET /api/user` via nginx → mock-API | ~1 100 | 61 ms | 0,3 kB |
+| `GET /` (index.html, 0,6 kB) | ~45 000 | 12 ms | 451 000 anrop på 10 s |
+| `GET /assets/index-*.js` (393 kB) | ~1 800 | 63 ms | 7 GB på 10 s – nätverkskortet är gränsen, inte nginx |
+| `GET /api/user` via nginx → mock-API | ~1 100 | 61 ms | Node-processen är gränsen |
 
 Mot staging på Render (gratisnivå, en instans, 10 anslutningar i 10 sekunder): `GET /` ~180 req/s, p99 120 ms, där nästan allt är nätverksväg och Renders proxy.
 
-**Slutsats 1:** de statiska filerna är aldrig flaskhalsen. En enda nginx-container serverar tusentals sidladdningar per sekund – det räcker till hela Kraftlys kundstock på en gång. Det som kostar är **API-anropen** (femtio gånger färre per sekund) och **bytes över nätet** (JS-bundlen är 142 kB gzip, hero-bilden 6,5 MB – den åtgärdas i M7).
+**Slutsats 1:** de statiska filerna är aldrig flaskhalsen. En enda nginx-container serverar tiotusentals sidladdningar per sekund – det räcker till hela Kraftlys kundstock på en gång. Det som kostar är **API-anropen** (femtio gånger färre per sekund) och **bytes över nätet** (JS-bundlen är 142 kB gzip, hero-bilden 6,5 MB – den åtgärdas i M7).
 
 **Slutsats 2:** fler kopior av frontenden ger nästan ingenting. Cache ger allt.
 
