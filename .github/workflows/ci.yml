@@ -176,4 +176,9 @@ jobs:
           # config.js skrivs av containern vid start. I prod ska flaggan vara av.
           curl -fsS "$URL/config.js"
           echo
-          curl -fsS "$URL/config.js" | grep -q "norway: false" && echo "✅ FEATURE_NORWAY är av i produktion" || { echo "::error::Norge-flaggan är PÅ i produktion"; exit 1; }
+          if curl -fsS "$URL/config.js" | grep -q "norway: false"; then
+            echo "✅ FEATURE_NORWAY är av i produktion"
+          else
+            echo "::error::Norge-flaggan är PÅ i produktion – kontrollera FEATURE_NORWAY i Render"
+            exit 1
+          fi
