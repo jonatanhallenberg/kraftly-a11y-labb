@@ -29,6 +29,8 @@
       <p class="hint">Källa: din elmätare. Uppdateras varje dygn.</p>
     </div>
 
+    <NorwayNotice />
+
     <div class="card">
       <h2>Spartips just nu</h2>
       <p>Elpriset är som högst mellan 07–09 och 17–20. Flytta tvätt och diskmaskin till natten så kan du sänka din kostnad med upp till 15 %.</p>
@@ -45,6 +47,7 @@ import { formatPrice } from '../utils/price'
 import { useUserStore } from '../stores/user'
 import { useConsumptionStore } from '../stores/consumption'
 import ConsumptionChart from '../components/ConsumptionChart.vue'
+import NorwayNotice from '../components/NorwayNotice.vue'
 
 const userStore = useUserStore()
 const consumptionStore = useConsumptionStore()
