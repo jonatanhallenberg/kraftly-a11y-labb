@@ -21,14 +21,16 @@
 
 <script setup>
 import { useRouter } from 'vue-router'
+import { useAuthStore } from './stores/auth'
 
 const router = useRouter()
+const auth = useAuthStore()
 
 // Sätts av containern vid start (public/config.js lokalt). Syns i alla miljöer utom prod.
 const appEnv = window.__KRAFTLY__?.env ?? 'lokal'
 
-const logout = () => {
-  localStorage.removeItem('kraftly_logged_in')
+const logout = async () => {
+  await auth.logout() // servern glömmer sessionen, token töms ur minnet
   router.push('/login')
 }
 </script>

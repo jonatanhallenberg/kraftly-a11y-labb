@@ -11,6 +11,8 @@ FROM nginx:1.27-alpine
 # En mall i stället för en färdig config: nginx fyller i PORT, API_URL och API_KEY
 # från miljön när containern startar. Samma image kan köras lokalt, i staging och i prod.
 COPY nginx.conf.template /etc/nginx/templates/default.conf.template
+# Säkerhetsheaders (CSP m.fl.) som mallen inkluderar i varje location
+COPY docker/security-headers.conf /etc/nginx/security-headers.conf
 COPY --from=build /app/dist /usr/share/nginx/html
 # Skriver config.js från APP_ENV när containern startar (övning 2 B)
 COPY --chmod=755 docker/40-runtime-config.sh /docker-entrypoint.d/40-runtime-config.sh
