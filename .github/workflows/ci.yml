@@ -1,4 +1,4 @@
-# Kraftly Mina sidor – CI/CD-pipeline (M2 → M5)
+# Kraftly Mina sidor – CI/CD-pipeline (M2 → M6)
 # PR mot main: quality + build + e2e + imagen byggs (men publiceras inte).
 # Push till main: allt ovan → imagen pushas till GHCR taggad med sha → deploy till staging
 #                 → godkännande (miljön production) → SAMMA image deployas till produktion.
@@ -40,6 +40,9 @@ jobs:
       # - run: npm run lint
       # - run: npm run format:check
       - run: npm run test:run
+      - run: npm run test:api
+      # Beroenden med kända sårbarheter (OWASP A03). Varnar, blockerar inte – se docs/pipeline.md.
+      - run: npm audit --omit=dev --audit-level=high || echo "::warning::npm audit hittade sårbarheter i produktionsberoenden – se loggen"
 
   build:
     name: Bygg
@@ -80,6 +83,7 @@ jobs:
           # Nyckel till mock-API:t som startas här på runnern. Ingen hemlighet – den öppnar
           # bara ett API som lever i två minuter på en maskin som sedan slängs.
           API_KEY: e2e-testnyckel
+          JWT_SECRET: e2e-hemlighet-som-bara-lever-i-den-har-korningen
       - uses: actions/upload-artifact@v4
         if: failure()          # rapporten med skärmdumpar är bara intressant när det gick fel
         with:
@@ -155,14 +159,16 @@ jobs:
           done
           echo "::error::Staging kör fortfarande inte $GITHUB_SHA efter 5 minuter. Kolla Events/Logs i Render."
           exit 1
-      - name: Röktest mot staging – går inloggningen genom proxyn?
+      - name: Röktest mot staging – svarar API v2 och sitter säkerhetsheaders på?
         env:
           URL: ${{ vars.STAGING_URL }}
         run: |
           URL="${URL%/}"
-          curl -fsS -X POST "$URL/api/login" -H 'Content-Type: application/json' -d '{"email":"a@b.se","password":"x"}'
-          echo
-          echo "✅ /api svarar via nginx med nyckeln från Render"
+          # Fel lösenord ska ge 401 – inte 500, inte 200. Det bevisar att v2 svarar genom proxyn.
+          CODE=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$URL/api/v2/auth/login" -H 'Content-Type: application/json' -d '{"email":"a@b.se","password":"x"}')
+          [ "$CODE" = "401" ] || { echo "::error::Väntade 401 från /api/v2/auth/login, fick $CODE"; exit 1; }
+          curl -fsSI "$URL/" | grep -i '^content-security-policy:' || { echo "::error::CSP-headern saknas"; exit 1; }
+          echo "✅ API v2 svarar via nginx och CSP är på"
 
   deploy-production:
     name: Deploy → produktion
@@ -211,10 +217,11 @@ jobs:
           URL: ${{ vars.PROD_URL }}
         run: |
           URL="${URL%/}"
-          curl -fsS -X POST "$URL/api/login" -H 'Content-Type: application/json' -d '{"email":"a@b.se","password":"x"}'
-          echo
+          CODE=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$URL/api/v2/auth/login" -H 'Content-Type: application/json' -d '{"email":"a@b.se","password":"x"}')
+          [ "$CODE" = "401" ] || { echo "::error::Väntade 401 från /api/v2/auth/login, fick $CODE"; exit 1; }
+          curl -fsSI "$URL/" | grep -i '^content-security-policy:' || { echo "::error::CSP-headern saknas"; exit 1; }
           if curl -fsS "$URL/config.js" | grep -q "norway: false"; then
-            echo "✅ /api svarar och FEATURE_NORWAY är av i produktion"
+            echo "✅ API v2 svarar, CSP är på och FEATURE_NORWAY är av i produktion"
           else
             echo "::error::Norge-flaggan är PÅ i produktion – kontrollera FEATURE_NORWAY i Render"
             exit 1
@@ -235,6 +242,7 @@ jobs:
   #     - run: npm run e2e:cy         # start-server-and-test startar api + dev, kör cypress run
   #       env:
   #         API_KEY: e2e-testnyckel     # mock-API:t vägrar starta utan nyckel (M4)
+  #         JWT_SECRET: e2e-hemlighet-som-bara-lever-i-den-har-korningen
   #     - uses: actions/upload-artifact@v4
   #       if: failure()
   #       with:

@@ -26,9 +26,14 @@ Frontend på http://localhost:8080. API:t nås bara via frontendens `/api` – d
 
 Varje merge till `main` deployas automatiskt till staging: https://kraftly-volt-staging.onrender.com (sover efter 15 min – första anropet tar en minut). Vilken commit som körs: `/version.txt`. Hur det fungerar, var hemligheterna bor och hur man gör rollback: `docs/deploy.md`.
 
+## Inloggning
+
+Riktig autentisering sedan M6: e-post + lösenord mot Kraftlys API v2, access token i minnet, refresh token i en httpOnly-cookie. Testkonton lokalt: `anna.andersson@example.com` / `kraftly-anna` och `bo.bergstrom@example.com` / `kraftly-bo`. Hur det hänger ihop och OWASP-genomgången: `docs/security.md`. Varför token inte ligger i localStorage: `docs/decisions/tokenlagring.md`.
+
 ## Kvalitet
 
     npm run test:run   # enhets- och komponenttester (Vitest)
+    npm run test:api   # API-tester mot mock-API:t (node:test)
     npm run e2e:pw     # E2E-smoke (Playwright) – kräver npx playwright install chromium
     npm run build      # produktionsbygge till dist/
 

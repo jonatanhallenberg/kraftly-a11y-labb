@@ -24,7 +24,7 @@ export default defineConfig(({ mode }) => {
       globals: true, // krävs för att Testing Library ska städa DOM:en mellan tester
       environment: 'jsdom',
       setupFiles: ['./tests/setup.js'],
-      include: ['src/**/*.test.js'] // Playwright-filerna i e2e/ ska inte köras av Vitest
+      include: ['src/**/*.test.js'] // Playwright-filerna i e2e/ och API-testerna i mock-api/ körs inte av Vitest
     }
   }
 })

@@ -44,8 +44,16 @@ Vilken version kör staging? `curl https://kraftly-volt-staging.onrender.com/ver
 | `APP_ENV` | nej | `public/config.js`: `lokal` | Render: `staging` / `production` | `40-runtime-config.sh` → `config.js` → miljöbannern |
 | `FEATURE_NORWAY` | nej | `public/config.js`: `true` | Render: `true` i staging, `false` i prod | `40-runtime-config.sh` → `config.js` → `isEnabled('norway')` |
 | `GITHUB_TOKEN` | ja | – | skapas av GitHub per körning | publish (push till GHCR) |
+| `JWT_SECRET` | **ja** | `.env` (lokalt API) / compose | hos API:t (Kraftlys IT sätter den på test-API:t) – aldrig hos frontendtjänsten | API:t signerar och verifierar access tokens |
+| `COOKIE_SECURE` | nej | `false` (http) | `true` hos API:t bakom https | refresh-cookien får flaggan `Secure` |
 
 Ingenting i tabellen finns i repot. `.env` är gitignorerad och dockerignorerad, `.env.example` visar vilka variabler som finns.
+
+## API v2 och autentiseringen (M6)
+
+Appen anropar `/api/v2/…`. Nyckeln lägger nginx på som förut; **vem användaren är** bevisas med en access token (`Authorization: Bearer`) som API:t ger vid inloggning. Refresh-token kommer som en httpOnly-cookie från API:t, via nginx-proxyn, och hamnar därför på *vår* adress (`kraftly-volt-staging.onrender.com`) med `Path=/api/v2/auth` – browsern skickar den bara till auth-endpointsen, och bara till samma sajt. Inga cookies eller tokens passerar pipelinen eller Render-konfigurationen.
+
+`/api/…` (v1) fungerar till **13 oktober 2026** (`Sunset`-headern) och används inte längre av appen. Röktesten i pipelinen postar fel uppgifter till `/api/v2/auth/login` och kräver 401 – det bevisar att v2 svarar genom proxyn – och kontrollerar att CSP-headern finns på `/`.
 
 ## API-nyckeln
 

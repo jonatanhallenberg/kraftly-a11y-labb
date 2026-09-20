@@ -6,7 +6,7 @@
 
 ```mermaid
 flowchart LR
-    PR[Pull request mot main] --> Q[quality<br/>lint · format:check · test:run]
+    PR[Pull request mot main] --> Q[quality<br/>lint · format:check · test:run · test:api · npm audit]
     PR --> B[build<br/>vite build → artefakt dist/]
     B --> E[e2e<br/>Playwright-smoke mot dist/]
     Q --> M{Alla checks gröna<br/>+ 1 review?}
@@ -50,3 +50,7 @@ Cachen nycklas på `package-lock.json`: ändras lockfilen byggs cachen om. Det �
 - **E2E-verktyg:** Playwright – se `docs/decisions/e2e-verktyg.md`.
 - **Parallellt eller i serie:** quality och build parallellt (snabbast feedback); e2e i serie efter build för att testa artefakten.
 - **Cypress-binären** laddas inte ner i CI (`CYPRESS_INSTALL_BINARY=0`) – vi kör Playwright.
+
+## npm audit (M6)
+
+`quality` kör `npm audit --omit=dev --audit-level=high`. Hittar den något blir steget en **varning**, inte rött. Skälet: en sårbarhet i ett beroende ska synas i varje körning, men en ny CVE i ett transitivt paket en fredag ska inte stoppa en hotfix. Regeln: en varning som står kvar mer än en vecka blir ett ärende i backloggen. Vill vi blockera senare är det ett ord i ci.yml.

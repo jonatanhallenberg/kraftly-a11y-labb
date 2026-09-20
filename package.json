@@ -9,12 +9,14 @@
     "api": "node mock-api/server.js",
     "test": "vitest",
     "test:run": "vitest run",
+    "test:api": "node --test \"mock-api/**/*.test.js\"",
     "e2e:pw": "playwright test",
     "e2e:cy": "start-server-and-test \"npm run api\" http://localhost:4000/healthz \"npm run dev\" http://localhost:5173 \"cypress run\""
   },
   "dependencies": {
     "chart.js": "^4.4.7",
     "express": "^4.21.2",
+    "jsonwebtoken": "^9.0.3",
     "lodash": "^4.17.21",
     "pinia": "^2.3.0",
     "vue": "^3.5.13",

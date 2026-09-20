@@ -17,4 +17,7 @@ services:
       dockerfile: mock-api/Dockerfile
     environment:
       API_KEY: ${API_KEY:?API_KEY saknas – kör cp .env.example .env}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET saknas – kör cp .env.example .env}
+      # Cookien får Secure först bakom https (staging/prod). Lokalt: http.
+      COOKIE_SECURE: "false"
     # Ingen publicerad port: bara web når api, via nätverket. Browsern pratar med web.
