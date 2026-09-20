@@ -23,6 +23,7 @@ export default defineConfig(({ mode }) => {
     test: {
       globals: true, // krävs för att Testing Library ska städa DOM:en mellan tester
       environment: 'jsdom',
+      include: ['src/**/*.test.js'], // API-testerna (mock-api/*.test.js) körs med node --test, inte Vitest
       setupFiles: ['./tests/setup.js']
     }
   }
