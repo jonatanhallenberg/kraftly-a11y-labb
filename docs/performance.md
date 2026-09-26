@@ -6,7 +6,7 @@
 
 | Vad | Verktyg | Inställning |
 |---|---|---|
-| Dashboarden (inloggad) | Chrome DevTools → Performance → *Local metrics* (LCP, CLS) | Produktionsbygget (`npm run build && npm run preview`), *Disable network cache* på, nätverk **Fast 4G**, tre omladdningar, medianen |
+| Dashboarden (inloggad) | Chrome DevTools → Performance → *Local metrics* (LCP, CLS) | Produktionsbygget (`npm run build && npm run preview`), enhetsläge **iPhone 12 Pro** (390 × 844), nätverk **Fast 4G**, *Disable network cache* på, tre omladdningar, medianen |
 | Inloggningssidan | Lighthouse (DevTools, mobil) lokalt · Lighthouse CI i pipelinen | Tre körningar, medianen |
 | JavaScript per sida | `npm run build` (kolumnen gzip) · `npx vite-bundle-visualizer` för att se vad som ligger i en chunk | – |
 
@@ -35,10 +35,11 @@ npx --yes sharp-cli -i src/assets/hero.png -o src/assets/hero.webp -f webp -q 75
 
 Samtidigt: `width="1200" height="600"` på `<img>` (browsern reserverar platsen innan bilden kommit) och `fetchpriority="high"` (LCP-bilden hämtas före annat).
 
-| Dashboarden, Fast 4G | Före | Efter |
+| Dashboarden, iPhone 12 Pro, Fast 4G | Före | Efter |
 |---|---|---|
 | Bildens storlek | 6 485 kB | 5 kB |
-| LCP | 7,1 s | 0,5 s |
+| LCP | 7,2 s | 0,5 s |
+| CLS | 0,18 | 0,03 |
 
 ### 2. Lazy routes: all kod i en fil → en chunk per vy
 
@@ -47,6 +48,8 @@ Alla fem vyer importerades direkt i routern. Nu `() => import('../views/…vue')
 | JavaScript (gzip) | Före | Efter |
 |---|---|---|
 | Inloggningssidan hämtar | 143 kB | 42 kB (41 + 1) |
+
+Dashboardens LCP påverkas inte märkbart (0,5 s före och efter) – den avgjordes av bilden. Vinsten är på alla andra sidor.
 
 ### 3. Lodash bort
 
@@ -66,11 +69,13 @@ Alla fem vyer importerades direkt i routern. Nu `() => import('../views/…vue')
 
 ### 5. Layoutskift: reserverad plats för bild och diagram
 
-Två saker flyttade innehållet när sidan laddade: bilden (ingen höjd förrän den kommit) och diagrammet (dyker upp när API:t svarat och trycker ner korten under). Bilden fick `width`/`height` (se 1), diagrammet en behållare med `aspect-ratio: 2 / 1`.
+Två saker flyttade innehållet när sidan laddade: bilden (ingen höjd förrän den kommit – lagat i 1) och diagrammet (dyker upp när API:t svarat och trycker ner korten under). Diagrammet fick en behållare med `aspect-ratio: 2 / 1`, samma proportioner som Chart.js ritar i.
 
-| Dashboarden | Före | Efter |
+| Dashboarden, iPhone 12 Pro, Fast 4G | Före (efter 1) | Efter |
 |---|---|---|
-| CLS | 0,24 | 0,00 |
+| CLS | 0,03 | 0,00 |
+
+I ett brett fönster (1280 × 800) syns diagrammets hopp inte alls – kortet under ligger utanför skärmen och räknas inte. Därför mäter vi i enhetsläget.
 
 ### 6. Komprimering i nginx
 
@@ -88,10 +93,10 @@ Kolla först om plattformen redan komprimerar (`curl -sI -H 'Accept-Encoding: gz
 
 ## Sammanlagt
 
-| Dashboarden, Fast 4G, cache av | Före | Efter |
+| Dashboarden, iPhone 12 Pro, Fast 4G, cache av | Före | Efter |
 |---|---|---|
-| LCP | 7,1 s | 0,5 s |
-| CLS | 0,24 | 0,00 |
+| LCP | 7,2 s | 0,5 s |
+| CLS | 0,18 | 0,00 |
 | JavaScript (gzip) | 143 kB | 93 kB |
 | Bilder | 6 485 kB | 5 kB |
 
