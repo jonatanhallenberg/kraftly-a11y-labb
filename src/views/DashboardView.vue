@@ -21,11 +21,15 @@
 
     <div class="card">
       <h2>Din elförbrukning – senaste 12 månaderna</h2>
-      <p v-if="consumptionStore.loading">Laddar…</p>
-      <ConsumptionChart
-        v-else-if="consumptionStore.data"
-        :months="consumptionStore.data.months"
-        :values="consumptionStore.data.values" />
+      <!-- Platsen för diagrammet är reserverad från start (samma proportioner som Chart.js ritar i, 2:1),
+           så att korten nedanför inte hoppar när datan kommer. Det var sidans CLS. -->
+      <div class="chart-box">
+        <p v-if="consumptionStore.loading">Laddar…</p>
+        <ConsumptionChart
+          v-else-if="consumptionStore.data"
+          :months="consumptionStore.data.months"
+          :values="consumptionStore.data.values" />
+      </div>
       <p class="hint">Källa: din elmätare. Uppdateras varje dygn.</p>
     </div>
 
@@ -79,6 +83,7 @@ const showTips = () => {
 
 <style scoped>
 .hero { width: 100%; height: auto; border-radius: 10px; margin-bottom: 18px; }
+.chart-box { aspect-ratio: 2 / 1; }
 .stats { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
 .stat-label { font-size: 13px; color: #7c8698; margin-bottom: 6px; }
 .stat-value { font-size: 26px; font-weight: 700; }
