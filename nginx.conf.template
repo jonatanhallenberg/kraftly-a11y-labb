@@ -11,6 +11,14 @@ server {
   include /etc/nginx/security-headers.conf;
   server_tokens off;
 
+  # --- Komprimering (M7) ------------------------------------------------------
+  # nginx skickar allt okomprimerat om man inte ber om annat. JS och CSS krymper till
+  # ungefär en tredjedel med gzip. Bilder (webp, png) är redan komprimerade – de står inte här.
+  gzip on;
+  gzip_types text/css application/javascript application/json image/svg+xml;
+  gzip_min_length 1024;
+  gzip_vary on;
+
   # Single page-app: okända adresser (/fakturor, /profil …) ska ge index.html
   # så att Vue Router kan ta över. Utan den här raden: 404 vid omladdning.
   location / {
