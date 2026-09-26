@@ -4,10 +4,18 @@ import { createTestingPinia } from '@pinia/testing'
 import DashboardView from './DashboardView.vue'
 
 // Diagrammet ritar på en <canvas> som jsdom inte har – chart.js har egna tester, vi mockar bort det.
-vi.mock('chart.js/auto', () => ({
-  default: class ChartMock {
+// Komponenten importerar nu delarna ur 'chart.js' (inte 'chart.js/auto') – mocken måste följa med,
+// annars mockar den ingenting och den riktiga Chart.js försöker rita i jsdom.
+vi.mock('chart.js', () => ({
+  Chart: class ChartMock {
+    static register() {}
     destroy() {}
-  }
+  },
+  BarController: {},
+  BarElement: {},
+  CategoryScale: {},
+  LinearScale: {},
+  Tooltip: {}
 }))
 
 const renderDashboard = (initialState) =>
