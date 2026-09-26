@@ -10,3 +10,6 @@ cypress/screenshots/
 # Hemligheter och lokal konfiguration – aldrig i repot
 .env
 .env.local
+
+# Lighthouse CI – rapporter från lokala körningar
+.lighthouseci/
