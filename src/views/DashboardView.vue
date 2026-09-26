@@ -41,9 +41,9 @@
 
 <script setup>
 // Dashboard. Got a bit big, clean up some day /M
-import _ from 'lodash'
 import { computed, onMounted, onBeforeUnmount } from 'vue'
 import { formatPrice } from '../utils/price'
+import { debounce } from '../utils/debounce'
 import { useUserStore } from '../stores/user'
 import { useConsumptionStore } from '../stores/consumption'
 import ConsumptionChart from '../components/ConsumptionChart.vue'
@@ -60,7 +60,7 @@ const latestMonth = computed(() => {
 const currentPrice = computed(() => formatPrice(consumptionStore.data?.pricePerKwh))
 
 // debounce on resize, chart.js redraws itself but we log a bit /J
-const onResize = _.debounce(() => console.log('resize', window.innerWidth), 300)
+const onResize = debounce(() => console.log('resize', window.innerWidth), 300)
 
 onMounted(() => {
   userStore.load()
