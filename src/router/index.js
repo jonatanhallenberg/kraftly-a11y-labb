@@ -1,11 +1,12 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
-// TODO: look into "lazy loading" at some point, ran out of time /M
-import LoginView from '../views/LoginView.vue'
-import DashboardView from '../views/DashboardView.vue'
-import InvoicesView from '../views/InvoicesView.vue'
-import MoveFormView from '../views/MoveFormView.vue'
-import ProfileView from '../views/ProfileView.vue'
+// Lazy routes: varje vy blir en egen chunk som hämtas först när man navigerar dit.
+// Inloggningssidan laddar alltså inte dashboarden, Chart.js eller något annat den inte visar.
+const LoginView = () => import('../views/LoginView.vue')
+const DashboardView = () => import('../views/DashboardView.vue')
+const InvoicesView = () => import('../views/InvoicesView.vue')
+const MoveFormView = () => import('../views/MoveFormView.vue')
+const ProfileView = () => import('../views/ProfileView.vue')
 
 const router = createRouter({
   history: createWebHistory(),
