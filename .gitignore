@@ -13,3 +13,7 @@ cypress/screenshots/
 
 # Lighthouse CI – rapporter från lokala körningar
 .lighthouseci/
+
+# Storybook – bygget och loggen från en krasch
+storybook-static/
+*storybook.log

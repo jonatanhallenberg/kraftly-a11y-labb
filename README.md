@@ -22,18 +22,22 @@ Frontend på http://localhost:8080. API:t nås bara via frontendens `/api` – d
     npm run api      # mock-API på port 4000 – läser API_KEY från .env (egen terminal)
     npm run dev      # Vite dev-server på http://localhost:5173
 
-## Prestandajakten (labbrepo, vecka 8)
+## Tillgänglighetslabben (labbrepo, vecka 9)
 
-Det här repot är Kraftly efter M6: riktig inloggning, skyddat API, CSP. Men det är **långsamt**, och er uppgift är att mäta, hitta varför och göra det snabbare. Instruktionerna står i övningen i Canvas. Kortversionen:
+Det här repot är Kraftly efter M7: inloggningen är säker och sidorna är snabba. Men alla kan inte använda dem. Det finns tre olika sorters knappar, "knappar" som är `<div>`-taggar, fält utan label och ingen fokusring. Verktygen är redan installerade: **Storybook** med tillägget för tillgänglighet, och **axe i Vitest**. Instruktionerna står i övningen i Canvas. Kortversionen:
 
     cp .env.example .env
     npm install
-    npm run api                          # terminal 1: mock-API:t på :4000
-    npm run build && npm run preview     # terminal 2: PRODUKTIONSBYGGET på http://localhost:4173
+    npm run test:a11y      # bara tillgänglighetstesterna – tre av dem är röda från start
+    npm run storybook      # Storybook på http://localhost:6006 – öppna fliken Accessibility under storyn
 
-**Mät alltid produktionsbygget (`build` + `preview`), aldrig `npm run dev`.** Dev-servern skickar hundratals små okomprimerade filer och säger ingenting om hur appen beter sig hos en kund.
+Appen kör ni som vanligt: `npm run api` i en terminal, `npm run dev` i en annan, och logga in med `anna.andersson@example.com` / `kraftly-anna`.
 
-Logga in med `anna.andersson@example.com` / `kraftly-anna`. Efter varje ändring: `npm run build` igen (preview-servern kan ligga kvar) och mät om.
+**Exemplen att kopiera:** `src/components/StatusChip.stories.js` (en story) och `src/components/StatusChip.a11y.test.js` (ett axe-test). **De röda testerna:** `src/views/LoginView.a11y.test.js` och `src/views/ProfileView.a11y.test.js`. Ni är klara när `npm run test:run` är grönt.
+
+**axe i Vitest ser inte allt.** Testerna körs i jsdom, en låtsasbrowser utan CSS och utan layout, så kontrast kan axe inte mäta där. Kontrast syns i Storybooks Accessibility-flik, som kör axe i en riktig browser. Att fokusringen är borttagen, eller att en `<div>` används som knapp, hittar inget av verktygen. Det märker ni bara när ni går igenom sidan med tangentbordet (Tab, Enter, mellanslag).
+
+Storybook skriver ut en varning om `vue-docgen-api` när den startar. Den är ofarlig.
 
 ## Staging
 
@@ -47,6 +51,8 @@ Riktig autentisering sedan M6: e-post + lösenord mot Kraftlys API v2, access to
 
     npm run test:run   # enhets- och komponenttester (Vitest)
     npm run test:api   # API-tester mot mock-API:t (node:test)
+    npm run test:a11y  # bara tillgänglighetstesterna (axe i Vitest)
+    npm run storybook  # komponenterna en och en på http://localhost:6006
     npm run e2e:pw     # E2E-smoke (Playwright) – kräver npx playwright install chromium
     npm run build      # produktionsbygge till dist/
 
